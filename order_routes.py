@@ -14,7 +14,9 @@ async def pedidos():
     return {"mensagem": "Você acessou a rota de pedidos"}
 
 @order_router.post("/pedido")
-async def criar_pedido(pedido_schema: PedidoSchema, session: Session = Depends(pegar_sessao)):
+async def criar_pedido(pedido_schema: PedidoSchema, session: Session = Depends(pegar_sessao), usuario: Usuario = Depends(verificar_token)):
+    if not usuario.admin and usuario.id != pedido_schema.id_usuario:
+        raise HTTPException(status_code=403, detail="Você só pode criar pedidos para você mesmo")
     novo_pedido = Pedido(usuario=pedido_schema.id_usuario)
     session.add(novo_pedido)
     session.commit()
@@ -30,6 +32,6 @@ async def cancelar_pedido(id_pedido: int, session: Session = Depends(pegar_sessa
     pedido.status = "CANCELADO"
     session.commit()
     return {
-        "mensagem": f"Pedido número: {id_pedido} cancelado com sucesso",
+        "mensagem": f"Pedido número: {pedido.id} cancelado com sucesso",
         "pedido": pedido
     }
