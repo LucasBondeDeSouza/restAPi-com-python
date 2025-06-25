@@ -1,26 +1,28 @@
+# Importa as classes necessárias do SQLAlchemy para criar a estrutura do banco de dados
 from sqlalchemy import create_engine, Column, String, Integer, Boolean, Float, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship
-from sqlalchemy_utils.types import ChoiceType
 
-# Cria a conexão
+# Cria a conexão com o banco de dados SQLite chamado "banco.db"
 db = create_engine("sqlite:///banco.db")
 
-# Cria a base do banco de dados
+# Cria a base para declarar as classes do banco de dados (modelo ORM)
 Base = declarative_base()
 
-# Criar as classes/tabelas do banco
-
-# Usuário
+# ===============================
+# MODELO DA TABELA DE USUÁRIOS
+# ===============================
 class Usuario(Base):
-    __tablename__ = "usuarios"
+    __tablename__ = "usuarios" # Nome da tabela no banco
 
-    id = Column("id", Integer, primary_key=True, autoincrement=True)
-    nome = Column("nome", String)
-    email = Column("email", String, nullable=False)
-    senha = Column("senha", String)
-    ativo = Column("ativo", Boolean)
-    admin = Column("admin", Boolean, default=False)
+    # Colunas da tabela
+    id = Column("id", Integer, primary_key=True, autoincrement=True)  # ID auto incremental (chave primária)
+    nome = Column("nome", String)  # Nome do usuário
+    email = Column("email", String, nullable=False)  # Email do usuário (obrigatório)
+    senha = Column("senha", String)  # Senha criptografada
+    ativo = Column("ativo", Boolean)  # Indica se o usuário está ativo
+    admin = Column("admin", Boolean, default=False)  # Se é um usuário administrador (padrão: não)
 
+    # Construtor da classe
     def __init__(self, nome, email, senha, ativo=True, admin=False):
         self.nome = nome
         self.email = email
@@ -28,9 +30,12 @@ class Usuario(Base):
         self.ativo = ativo
         self.admin = admin
 
-# Pedido
+
+# ===============================
+# MODELO DA TABELA DE PEDIDOS
+# ===============================
 class Pedido(Base):
-    __tablename__ = "pedidos"
+    __tablename__ = "pedidos" # Nome da tabela no banco
 
     # STATUS_PEDIDOS = (
     #     ("PENDENTE", "PENDENTE"),
@@ -38,31 +43,37 @@ class Pedido(Base):
     #     ("FINALIZADO", "FINALIZADO")
     # )
 
-    id = Column("id", Integer, primary_key=True, autoincrement=True)
-    status = Column("status", String)
-    usuario = Column("usuario", ForeignKey("usuarios.id"))
-    preco = Column("preco", Float)
-    itens = relationship("ItemPedido", cascade="all, delete")
+    id = Column("id", Integer, primary_key=True, autoincrement=True)  # ID do pedido
+    status = Column("status", String)  # Status do pedido (ex: PENDENTE, FINALIZADO)
+    usuario = Column("usuario", ForeignKey("usuarios.id"))  # Chave estrangeira referenciando o ID do usuário
+    preco = Column("preco", Float)  # Preço total do pedido
+    itens = relationship("ItemPedido", cascade="all, delete")  # Relacionamento com os itens do pedido
 
+    # Construtor da classe
     def __init__(self, usuario, status="PENDENTE", preco=0):
         self.usuario = usuario
         self.preco = preco
         self.status = status
 
+    # Método que calcula o preço total do pedido com base nos itens
     def calcular_preco(self):
         self.preco = sum(item.preco_unitario * item.quantidade for item in self.itens)
 
-# Itens Pedidos
+
+# ===========================================
+# MODELO DA TABELA DE ITENS DO PEDIDO
+# ===========================================
 class ItemPedido(Base):
-    __tablename__ = "itens_pedido"
+    __tablename__ = "itens_pedido" # Nome da tabela no banco
 
-    id = Column("id", Integer, primary_key=True, autoincrement=True)
-    quantidade = Column("quantidade", Integer)
-    sabor = Column("sabor", String)
-    tamanho = Column("tamanho", String)
-    preco_unitario = Column("preco_unitario", Float)
-    pedido = Column("pedido", ForeignKey("pedidos.id"))
+    id = Column("id", Integer, primary_key=True, autoincrement=True)  # ID do item
+    quantidade = Column("quantidade", Integer)  # Quantidade do item
+    sabor = Column("sabor", String)  # Sabor do item (ex: pizza de calabresa, etc.)
+    tamanho = Column("tamanho", String)  # Tamanho do item (ex: pequeno, médio, grande)
+    preco_unitario = Column("preco_unitario", Float)  # Preço de uma unidade
+    pedido = Column("pedido", ForeignKey("pedidos.id"))  # Chave estrangeira referenciando o pedido
 
+    # Construtor da classe
     def __init__(self, quantidade, sabor, tamanho, preco_unitario, pedido):
         self.quantidade = quantidade
         self.sabor = sabor
